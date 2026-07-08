@@ -4,3 +4,4 @@ pyproj
 mgrs
 folium
 meshtastic
+weasyprint

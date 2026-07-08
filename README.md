@@ -80,7 +80,21 @@ for almost two centuries.
 - `basestation/nodes.json` — radio short name → team
 - `docs/radio-setup.md` — night-before radio/sensor configuration checklist
 - `docs/mission-plan.md` — lesson outline, briefing script, rules, data sheet
+- `index.html` — shareable project explainer (web + print in one file)
+- `docs/ocean-recon-explainer.pdf` — the same explainer, rendered for printing
 - `maps/` — generated output (not committed)
+
+## Sharing the explainer
+
+`index.html` is self-contained (its map image lives in `docs/assets/`) and
+doubles as the source for the PDF:
+
+- **Web**: enable GitHub Pages (repo Settings → Pages → deploy from branch
+  `main`, folder `/ (root)`) and the explainer appears at
+  `https://<user>.github.io/ocean-recon/`. Or just open the file locally.
+- **PDF**: `.venv/bin/weasyprint index.html docs/ocean-recon-explainer.pdf`
+  (weasyprint is in `requirements.txt`); the print stylesheet paginates it to
+  three letter-size pages.
 
 ## Quickstart
 

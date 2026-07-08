@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ocean Recon — kids, sailboats, mesh radios, and a grid over the water</title>
+<style>
+  /* ---------- shared (screen + print) ---------- */
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #1c2a3a; line-height: 1.5; margin: 0;
+  }
+  h1, h2, .kicker, .chip, .flow, .display, .steps li::before, .legendline, .kit td:first-child {
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  .kicker {
+    color: #0b5ea8; letter-spacing: 2.5px; font-size: 0.8rem;
+    text-transform: uppercase; margin-bottom: 0.3rem;
+  }
+  h1 { font-size: 2.4rem; margin: 0 0 0.2rem 0; color: #0d2b4e; letter-spacing: 0.5px; }
+  .subtitle { font-size: 1.1rem; color: #44586e; margin: 0 0 1.4rem 0; font-style: italic; }
+  h2 {
+    font-size: 1.2rem; color: #0d2b4e; margin: 2rem 0 0.6rem 0;
+    border-bottom: 2px solid #0b5ea8; padding-bottom: 0.2rem;
+  }
+  p { margin: 0 0 0.8rem 0; }
+  .lede { font-size: 1.08rem; }
+  .rule { border: none; border-top: 5px solid #0b5ea8; width: 5rem; margin: 0 0 1.4rem 0; }
+
+  .display {
+    background: #10161f; color: #7fd4ff; border-radius: 10px;
+    padding: 0.7rem 1.1rem; font-family: 'Courier New', monospace;
+    font-size: 1.15rem; letter-spacing: 1px; white-space: nowrap;
+    box-shadow: inset 0 0 0 2px #2c3a4d;
+  }
+  .display .dim { color: #48627a; font-size: 0.65rem; letter-spacing: 2px; display: block; }
+  .display .hot { color: #ffd166; font-weight: bold; }
+  .readme { display: flex; align-items: center; gap: 1.2rem; margin: 1rem 0 1.2rem 0; flex-wrap: wrap; }
+  .readme .arrow { font-size: 1.6rem; color: #0b5ea8; font-family: Helvetica, sans-serif; }
+  .square-callout {
+    font-family: Helvetica, Arial, sans-serif; background: #eaf3fb;
+    border: 2px solid #0b5ea8; border-radius: 8px; padding: 0.6rem 1rem;
+    font-size: 1rem; color: #0d2b4e;
+  }
+  .square-callout b { font-size: 1.4rem; }
+
+  .flow { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin: 1rem 0; flex-wrap: wrap; }
+  .flow .node {
+    background: #eaf3fb; border: 1px solid #9dc3e0; border-radius: 8px;
+    padding: 0.5rem 0.6rem; font-size: 0.72rem; text-align: center;
+    color: #0d2b4e; flex: 1 1 7rem; min-width: 6.5rem;
+  }
+  .flow .node b { display: block; font-size: 0.82rem; }
+  .flow .arr { color: #0b5ea8; font-size: 1.1rem; }
+
+  .steps { margin: 0.5rem 0; padding-left: 0; list-style: none; counter-reset: step; }
+  .steps li { counter-increment: step; margin: 0 0 0.7rem 0; padding-left: 2.6rem; position: relative; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 0.1rem;
+    background: #0b5ea8; color: white; width: 1.7rem; height: 1.7rem;
+    border-radius: 50%; text-align: center; line-height: 1.7rem;
+    font-weight: bold; font-size: 0.95rem;
+  }
+
+  .chart img { width: 100%; height: auto; border: 1px solid #c6d4e2; border-radius: 4px; }
+  .caption { font-size: 0.85rem; color: #44586e; margin-top: 0.4rem; }
+  .legendline { font-size: 0.85rem; margin: 0.3rem 0; }
+  .swatch {
+    display: inline-block; width: 0.85rem; height: 0.85rem; border-radius: 3px;
+    vertical-align: -0.12rem; margin-right: 0.4rem;
+  }
+
+  .kit { border-collapse: collapse; }
+  .kit td { font-size: 0.92rem; padding: 0.3rem 0.8rem 0.3rem 0; vertical-align: top; }
+  .kit td:first-child { font-weight: bold; color: #0d2b4e; white-space: nowrap; }
+  .quote {
+    border-left: 5px solid #0b5ea8; padding: 0.2rem 0 0.2rem 1rem; margin: 1rem 0;
+    color: #44586e; font-style: italic; font-size: 1.05rem;
+  }
+  footer { margin-top: 2.5rem; font-size: 0.8rem; color: #8a9bb0; text-align: center; }
+  footer a { color: #0b5ea8; }
+
+  /* ---------- screen only ---------- */
+  @media screen {
+    body { background: #f2f6fa; }
+    .page {
+      max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.5rem 3rem;
+      background: white; box-shadow: 0 0 24px rgba(13, 43, 78, 0.08);
+    }
+    @media (max-width: 640px) {
+      h1 { font-size: 1.8rem; }
+      .flow { flex-direction: column; }
+      .flow .node { width: 100%; }
+      .flow .arr { transform: rotate(90deg); }
+    }
+  }
+
+  /* ---------- print / PDF only ---------- */
+  @media print {
+    @page {
+      size: letter; margin: 18mm 16mm 16mm 16mm;
+      @bottom-center {
+        content: "Ocean Recon · Edgewood Sailing Camp STEM Mission";
+        font-family: Helvetica, Arial, sans-serif; font-size: 8pt; color: #8a9bb0;
+      }
+      @bottom-right {
+        content: counter(page) " / " counter(pages);
+        font-family: Helvetica, Arial, sans-serif; font-size: 8pt; color: #8a9bb0;
+      }
+    }
+    html { font-size: 11.5px; }
+    body { font-size: 10.5pt; }
+    h1 { font-size: 26pt; }
+    .display { font-size: 13pt; }
+    .flow { flex-wrap: nowrap; }
+    .chart, .backpage { page-break-before: always; }
+    h2 { page-break-after: avoid; }
+    footer { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="kicker">Edgewood Sailing Camp · STEM Mission Brief</div>
+<h1>OCEAN RECON</h1>
+<p class="subtitle">Kids, sailboats, mesh radios, and a grid over the water</p>
+<hr class="rule">
+
+<p class="lede">
+Edgewood&rsquo;s waters need an environmental survey. Each sailboat becomes a
+recon vessel: aboard is a small mesh radio with a GPS and a science sensor.
+The Providence River off the yacht club is divided into 100-meter grid
+squares, and every team gets a printed chart with five <i>priority squares</i>
+to cover. Sail into a square, hold position, record the reading &mdash; and the
+radio quietly relays your data across the water, boat to boat, back to mission
+control on shore.</p>
+
+<h2>How a crew knows where it is</h2>
+<p>The radio&rsquo;s screen shows position in the US National Grid (the
+search-and-rescue standard). The whole sailing area sits inside one big zone,
+so crews only need <b>the first three digits of each number group</b>:</p>
+
+<div class="readme">
+  <div class="display">
+    <span class="dim">POSITION&nbsp;&nbsp;·&nbsp;&nbsp;SATS 9</span>
+    19T CG <span class="hot">013</span>62 <span class="hot">284</span>11
+  </div>
+  <div class="arrow">&#8594;</div>
+  <div class="square-callout">you are in square<br><b>013 &ndash; 284</b></div>
+</div>
+
+<p>Find column <b>013</b> and row <b>284</b> on the printed map &mdash; that&rsquo;s
+your boat. No latitude, no longitude, no decimal points: just two three-digit
+numbers a nine-year-old can read off a screen in a bouncing boat.</p>
+
+<h2>How the data gets home</h2>
+<div class="flow">
+  <div class="node"><b>Sensor</b>water &amp; air readings every minute</div>
+  <div class="arr">&#8594;</div>
+  <div class="node"><b>Radio + GPS</b>stamps each reading with its grid square</div>
+  <div class="arr">&#8594;</div>
+  <div class="node"><b>Mesh network</b>boats relay each other &mdash; no cell towers</div>
+  <div class="arr">&#8594;</div>
+  <div class="node"><b>Mission control</b>shore laptop logs &amp; scores</div>
+  <div class="arr">&#8594;</div>
+  <div class="node"><b>Coverage map</b>squares light up as data arrives</div>
+</div>
+
+<h2>The mission</h2>
+<ol class="steps">
+  <li><b>Cover your squares.</b> Priority squares are worth 3 points; any other
+      new square your team logs is worth 1.</li>
+  <li><b>Write it down.</b> A square only counts once the reading is on your
+      paper data sheet &mdash; square, time, value. Scientists log by hand, then
+      validate against the instruments.</li>
+  <li><b>Trust the mesh.</b> Shore is logging everything automatically. At
+      debrief, the coverage map is revealed and paper meets data.</li>
+</ol>
+
+<div class="chart">
+<h2>The chart each team carries</h2>
+<img src="docs/assets/team-chart.png" alt="Team Harbor Seals mission grid map: OpenStreetMap base with a labeled 100 m grid over the Providence River, shaded priority squares, and a launch star at the Edgewood Yacht Club dock">
+<p class="caption">
+Team Harbor Seals&rsquo; mission chart: OpenStreetMap base, 100&thinsp;m
+US National Grid overlay (bold lines every 500&thinsp;m), three-digit
+column/row labels on all four edges.</p>
+<p class="legendline"><span class="swatch" style="background:#e53935;opacity:.5"></span>
+Shaded squares &mdash; this team&rsquo;s priority targets, placed in open water west of the shipping channel.</p>
+<p class="legendline"><span class="swatch" style="background:#b71c1c"></span>
+Star &mdash; the launch, at the Edgewood Yacht Club dock (square 013&ndash;284).</p>
+<p class="legendline"><span class="swatch" style="background:#1a237e"></span>
+The top margin of every chart repeats the one skill that unlocks it all:
+<i>radio shows 19T&thinsp;CG&thinsp;01362&thinsp;28411 &rarr; read the first three digits of each group &rarr; square 013&ndash;284.</i></p>
+</div>
+
+<div class="backpage">
+<h2>Why this grid: the search-and-rescue standard</h2>
+<p>The map uses <b>USNG</b> (US National Grid), the civilian twin of the
+military MGRS &mdash; the coordinate system used by search-and-rescue teams,
+FEMA, and the National Guard. It&rsquo;s built on UTM, so squares are true
+squares in meters, and it scales by simply truncating digits: 1000&thinsp;m,
+100&thinsp;m, or 10&thinsp;m resolution from the same numbers. When a crew
+reads &ldquo;grid 013&ndash;284&rdquo; off their radio, they are using the same
+grid printed on official SAR maps &mdash; a small, real piece of emergency
+preparedness. Ham radio operators do the same thing globally with the
+Maidenhead locator system (Edgewood sits in square <b>FN41hs</b>), noted on
+every chart as a nod to that tradition.</p>
+
+<h2>An old tradition, still underway</h2>
+<p>Boats recording ocean and weather data is one of the oldest citizen-science
+traditions there is. In the age of sail, captains kept careful logs of winds,
+currents, and temperatures; in the 1840s&ndash;50s, Matthew Fontaine Maury
+gathered thousands of those logbooks into the first wind and current charts
+&mdash; shaving weeks off ocean passages and launching standardized marine
+weather observation.</p>
+<p>That system never stopped. Today, thousands of commercial vessels in the
+WMO&rsquo;s Voluntary Observing Ship program still radio in weather reports,
+while Argo floats and uncrewed sail drones sweep the oceans for the
+temperature and salinity data behind every weather forecast and climate model.
+A sailboat crossing a grid square and reporting conditions there is precisely
+this tradition:</p>
+<p class="quote">The kids are the newest crew in a data-collecting fleet
+that&rsquo;s been underway for almost two centuries.</p>
+
+<h2>The kit</h2>
+<table class="kit">
+  <tr><td>Radios</td><td>Heltec V4 LoRa boards running stock Meshtastic firmware &mdash; open-source, license-free mesh networking with a built-in display.</td></tr>
+  <tr><td>Position</td><td>Standard GPS modules; the display is set to USNG/MGRS format, so no custom firmware is needed anywhere.</td></tr>
+  <tr><td>Sensors</td><td>One I2C environmental sensor per boat (temperature, humidity, pressure&hellip;), auto-detected by the firmware and broadcast every 60 seconds.</td></tr>
+  <tr><td>Shore side</td><td>A laptop and one more radio: a small Python program logs every packet to CSV, lights up covered squares on a live map, and scores each team at debrief.</td></tr>
+  <tr><td>Paper</td><td>Printed grid charts (one per team, priority squares shaded) and handwritten data sheets &mdash; because reading, plotting, and recording are the skills being taught.</td></tr>
+</table>
+
+<h2>What they learn</h2>
+<p>GPS turns satellite time signals into a position; grids turn
+positions into names people can say over a radio. Careful measurement means
+writing down what you saw, where, and when &mdash; then checking your record
+against the instruments. And networks don&rsquo;t need towers: a message can
+hop boat-to-boat to shore. Navigation, meteorology, radio, and data literacy
+&mdash; all disguised as an afternoon of sailing.</p>
+</div>
+
+<footer>Ocean Recon · Edgewood Sailing Camp STEM Mission ·
+<a href="docs/ocean-recon-explainer.pdf">printable PDF version</a></footer>
+
+</div>
+</body>
+</html>
