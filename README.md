@@ -10,6 +10,25 @@ activity runs on stock Meshtastic firmware — kids read `19T CG 01362 28411` of
 the screen, take the first 3 digits of each number group, and find square
 `013-284` on their printed map.
 
+## Rationale
+
+The original design brief, in brief: we have Meshtastic radios with displays,
+GPS, and room for a sensor on each board. Give every crew one radio and one
+instrument, divide the waters around Edgewood into grid squares, and hand each
+team a printed map with priority squares to cover. The radio's screen tells a
+crew what they're measuring and which square they're in; the map and their own
+orientation tell them where to go next. The mission is simply to make sure
+enough squares have data before they sail home — while every reading streams
+back over the mesh to shore.
+
+Two requirements shaped the design. First, the coordinate system had to be
+*legible*: raw GPS latitude/longitude means little to most people, so the map
+needed a grid you can read at a glance — with the ham-radio grid-square
+tradition as inspiration and a STEM touchstone. Second, it had to be
+*printable*: a grid you can overlay on a real map of Edgewood, hand to a kid
+in a boat, and navigate by. The USNG/MGRS grid below is where those two
+requirements met.
+
 ## Background
 
 ### Why this mission
