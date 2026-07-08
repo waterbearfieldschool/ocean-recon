@@ -1,3 +1,49 @@
+diff --git a/examples/companion_radio/MyMesh.cpp b/examples/companion_radio/MyMesh.cpp
+index 6fbb0f7..b4f95ed 100644
+--- a/examples/companion_radio/MyMesh.cpp
++++ b/examples/companion_radio/MyMesh.cpp
+@@ -107,6 +107,7 @@
+ #define LAZY_CONTACTS_WRITE_DELAY       5000
+ 
+ #define PUBLIC_GROUP_PSK                "izOH6cXN6mrJ5e26oRXNcg=="
++#define EDGEWOOD_GROUP_PSK              "a5i7US4uIXqX5pO/z0vFww=="  // Ocean Recon mission channel
+ 
+ // these are _pushed_ to client app at any time
+ #define PUSH_CODE_ADVERT                0x80
+@@ -959,6 +960,7 @@ void MyMesh::begin(bool has_display) {
+   _store->loadContacts(this);
+   bootstrapRTCfromContacts();
+   addChannel("Public", PUBLIC_GROUP_PSK); // pre-configure Andy's public channel
++  addChannel("edgewood", EDGEWOOD_GROUP_PSK); // pre-configure private mission channel (idx 1)
+   _store->loadChannels(this);
+ 
+   radio_driver.setParams(_prefs.freq, _prefs.bw, _prefs.sf, _prefs.cr);
+@@ -2233,6 +2235,13 @@ void MyMesh::loop() {
+ #endif
+ }
+ 
++bool MyMesh::sendChannelText(uint8_t channel_idx, const char* text) {
++  ChannelDetails channel;
++  if (!getChannel(channel_idx, channel)) return false;
++  return sendGroupMessage(getRTCClock()->getCurrentTimeUnique(), channel.channel,
++                          _prefs.node_name, text, strlen(text));
++}
++
+ bool MyMesh::advert() {
+   mesh::Packet* pkt;
+   if (_prefs.advert_loc_policy == ADVERT_LOC_NONE) {
+diff --git a/examples/companion_radio/MyMesh.h b/examples/companion_radio/MyMesh.h
+index 43d3950..a3c51ba 100644
+--- a/examples/companion_radio/MyMesh.h
++++ b/examples/companion_radio/MyMesh.h
+@@ -98,6 +98,7 @@ public:
+   void loop();
+   void handleCmdFrame(size_t len);
+   bool advert();
++  bool sendChannelText(uint8_t channel_idx, const char* text);
+   void enterCLIRescue();
+ 
+   int  getRecentlyHeard(AdvertPath dest[], int max_num);
 diff --git a/examples/companion_radio/ui-new/MGRS.h b/examples/companion_radio/ui-new/MGRS.h
 new file mode 100644
 index 0000000..7f3b888
@@ -85,7 +131,7 @@ index 0000000..7f3b888
 +  return true;
 +}
 diff --git a/examples/companion_radio/ui-new/UITask.cpp b/examples/companion_radio/ui-new/UITask.cpp
-index 7c84201..31e39e3 100644
+index 7c84201..59c4b40 100644
 --- a/examples/companion_radio/ui-new/UITask.cpp
 +++ b/examples/companion_radio/ui-new/UITask.cpp
 @@ -30,6 +30,7 @@
@@ -96,7 +142,15 @@ index 7c84201..31e39e3 100644
  
  class SplashScreen : public UIScreen {
    UITask* _task;
-@@ -317,13 +318,16 @@ public:
+@@ -92,6 +93,7 @@ class HomeScreen : public UIScreen {
+     ADVERT,
+ #if ENV_INCLUDE_GPS == 1
+     GPS,
++    RECON,
+ #endif
+ #if UI_SENSORS_PAGE == 1
+     SENSORS,
+@@ -317,16 +319,32 @@ public:
          sprintf(buf, "%d", nmea->satellitesCount());
          display.drawTextRightAlign(display.width()-1, y, buf);
          y = y + 12;
@@ -118,3 +172,60 @@ index 7c84201..31e39e3 100644
          display.drawTextRightAlign(display.width()-1, y, buf);
          y = y + 12;
        }
++    } else if (_page == HomePage::RECON) {
++      LocationProvider* nmea = sensors.getLocationProvider();
++      char grid[12];
++      display.drawTextCentered(display.width() / 2, 18, "grid report -> edgewood");
++      if (nmea && nmea->isValid() && mgrs_grid100(nmea->getLatitude()/1000000.,
++            nmea->getLongitude()/1000000., grid, sizeof(grid))) {
++        display.setTextSize(2);
++        display.drawTextCentered(display.width() / 2, 32, grid);
++        display.setTextSize(1);
++      } else {
++        display.drawTextCentered(display.width() / 2, 34, "(no gps fix)");
++      }
++      display.drawTextCentered(display.width() / 2, 64 - 11, "send: " PRESS_LABEL);
+ #endif
+ #if UI_SENSORS_PAGE == 1
+     } else if (_page == HomePage::SENSORS) {
+@@ -447,6 +465,25 @@ public:
+       _task->toggleGPS();
+       return true;
+     }
++    if (c == KEY_ENTER && _page == HomePage::RECON) {
++      _task->notify(UIEventType::ack);
++      LocationProvider* nmea = sensors.getLocationProvider();
++      char grid[12];
++      if (nmea && nmea->isValid() && mgrs_grid100(nmea->getLatitude()/1000000.,
++            nmea->getLongitude()/1000000., grid, sizeof(grid))) {
++        char text[64];
++        snprintf(text, sizeof(text), "grid %s %.6f,%.6f", grid,
++                 nmea->getLatitude()/1000000., nmea->getLongitude()/1000000.);
++        if (the_mesh.sendChannelText(1, text)) {   // idx 1 = 'edgewood'
++          _task->showAlert("Report sent!", 1000);
++        } else {
++          _task->showAlert("Send failed..", 1000);
++        }
++      } else {
++        _task->showAlert("No GPS fix yet", 1000);
++      }
++      return true;
++    }
+ #endif
+ #if UI_SENSORS_PAGE == 1
+     if (c == KEY_ENTER && _page == HomePage::SENSORS) {
+@@ -712,6 +749,14 @@ bool UITask::isButtonPressed() const {
+ }
+ 
+ void UITask::loop() {
++  // one automatic advert shortly after boot, so nodes exchange
++  // public keys / names without anyone pressing anything
++  static bool boot_advert_sent = false;
++  if (!boot_advert_sent && millis() > 25000) {
++    boot_advert_sent = true;
++    the_mesh.advert();
++  }
++
+   char c = 0;
+ #if UI_HAS_JOYSTICK
+   int ev = user_btn.check();

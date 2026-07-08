@@ -22,6 +22,7 @@ from pathlib import Path
 
 import contextily as ctx
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.patches import FancyArrow, Rectangle
 from pyproj import Transformer
 
@@ -79,42 +80,128 @@ def snap_bounds(bounds):
     return x0, x1, y0, y1
 
 
-def draw_map(bounds, out_stem, size, title, team=None, provider=None):
+def draw_graticule(ax, bounds, y0, y1, step=0.005):
+    """Dashed lat/lon lines with degree labels, on top of the MGRS grid."""
+    lbl_kw = dict(fontsize=6.5, style="italic", color="black", zorder=6,
+                  bbox=dict(facecolor="white", alpha=0.75, edgecolor="none", pad=1))
+    # lines at round multiples of step
+    lats = [round(math.ceil(bounds["south"] / step) * step + i * step, 6)
+            for i in range(int((bounds["north"] - bounds["south"]) / step) + 1)]
+    lats = [v for v in lats if v <= bounds["north"]]
+    lons = [round(math.ceil(bounds["west"] / step) * step + i * step, 6)
+            for i in range(int((bounds["east"] - bounds["west"]) / step) + 1)]
+    lons = [v for v in lons if v <= bounds["east"]]
+
+    for lat in lats:
+        pts = [TO_UTM.transform(bounds["west"] + f * (bounds["east"] - bounds["west"]), lat)
+               for f in (0, 0.5, 1)]
+        ax.plot([p[0] for p in pts], [p[1] for p in pts], ls=(0, (6, 3)),
+                color="black", lw=0.9, alpha=0.85, zorder=3.5, clip_on=True)
+        lx, ly = pts[0]
+        if ly < y0 + 0.08 * (y1 - y0):  # would collide with the scale bar
+            lx, ly = pts[-1]
+            ax.annotate(f"{lat:.3f}°N", (lx, ly), xytext=(-6, 3),
+                        textcoords="offset points", ha="right", va="bottom", **lbl_kw)
+        else:
+            ax.annotate(f"{lat:.3f}°N", (lx, ly), xytext=(6, 3),
+                        textcoords="offset points", ha="left", va="bottom", **lbl_kw)
+    for lon in lons:
+        pts = [TO_UTM.transform(lon, bounds["south"] + f * (bounds["north"] - bounds["south"]))
+               for f in (0, 0.5, 1)]
+        ax.plot([p[0] for p in pts], [p[1] for p in pts], ls=(0, (6, 3)),
+                color="black", lw=0.9, alpha=0.85, zorder=3.5, clip_on=True)
+        bx, by = pts[0]
+        ax.annotate(f"{abs(lon):.3f}°W", (bx, max(by, y0)), xytext=(3, 10),
+                    textcoords="offset points", ha="left", va="bottom",
+                    rotation=90, **lbl_kw)
+
+
+def draw_map(bounds, out_stem, size, title, team=None, provider=None, bw=False,
+             latlon=False, howto=True, footer=True, posterize=0,
+             invert_water=False, web=False):
     x0, x1, y0, y1 = snap_bounds(bounds)
-    fig_w, fig_h = PAPER[size]
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    if web:
+        # edge-to-edge render: image pixels map linearly onto the UTM extent
+        fig_h = 10.0
+        fig_w = fig_h * (x1 - x0) / (y1 - y0)
+        fig = plt.figure(figsize=(fig_w, fig_h))
+        ax = fig.add_axes([0, 0, 1, 1])
+    else:
+        fig_w, fig_h = PAPER[size]
+        fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+        ax.set_aspect("equal")
     ax.set_xlim(x0, x1)
     ax.set_ylim(y0, y1)
-    ax.set_aspect("equal")
 
     provider = provider or ctx.providers.OpenStreetMap.Mapnik
     ctx.add_basemap(ax, crs=UTM_CRS, source=provider, attribution_size=4)
 
+    if bw:
+        # grayscale + percentile contrast stretch so water/land/streets
+        # stay distinct on a black-and-white printer
+        im = ax.images[0]
+        arr = np.asarray(im.get_array(), dtype=float)
+        rgb = arr[..., :3]
+        if rgb.max() > 1:
+            rgb = rgb / 255.0
+        gray = rgb @ np.array([0.299, 0.587, 0.114])
+        if np.median(gray) < 0.5:  # dark basemap (e.g. DarkMatter): print light
+            gray = 1.0 - gray
+        lo, hi = np.percentile(gray, 2), np.percentile(gray, 98)
+        gray = np.clip((gray - lo) / max(hi - lo, 1e-6), 0, 1)
+        gray = gray ** 0.78  # lighten midtones (water) so black grid pops in print
+        if posterize:  # flatten to N gray levels for a crisp toner-style print
+            levels = np.round(gray * (posterize - 1))
+            if invert_water:  # swap the two lightest levels: water white, land gray
+                top, second = posterize - 1, posterize - 2
+                levels = np.where(levels == top, -1, levels)
+                levels = np.where(levels == second, top, levels)
+                levels = np.where(levels == -1, second, levels)
+            gray = levels / (posterize - 1)
+        im.set_array(gray)
+        im.set_cmap("gray")
+        im.set_clim(0, 1)
+
+    ink = "black" if bw else "#1a237e"
+    launch_color = "black" if bw else "#b71c1c"
+
     # --- grid lines ---
     for x in range(x0, x1 + 1, GRID_M):
         bold = x % BOLD_M == 0
-        ax.axvline(x, color="#1a237e", lw=1.2 if bold else 0.35,
+        ax.axvline(x, color=ink, lw=1.2 if bold else 0.35,
                    alpha=0.9 if bold else 0.55, zorder=3)
     for y in range(y0, y1 + 1, GRID_M):
         bold = y % BOLD_M == 0
-        ax.axhline(y, color="#1a237e", lw=1.2 if bold else 0.35,
+        ax.axhline(y, color=ink, lw=1.2 if bold else 0.35,
                    alpha=0.9 if bold else 0.55, zorder=3)
 
     # --- edge labels: 3-digit MGRS values on every line, bigger on bold ---
+    lbl_bbox = dict(facecolor="white", alpha=0.7, edgecolor="none", pad=0.5) \
+        if web else None
+    x_edges = [(y0, "bottom", 5), (y1, "top", -5)] if web \
+        else [(y0, "top", -12), (y1, "bottom", 12)]
+    y_edges = [(x0, "left", 4), (x1, "right", -4)] if web \
+        else [(x0, "right", -4), (x1, "left", 4)]
     for x in range(x0, x1 + 1, GRID_M):
         bold = x % BOLD_M == 0
-        for y_edge, va, dy in [(y0, "top", -12), (y1, "bottom", 12)]:
+        for y_edge, va, dy in x_edges:
             ax.annotate(grid_label(x), (x, y_edge), xytext=(0, dy),
                         textcoords="offset points", ha="center", va=va,
                         fontsize=8 if bold else 4.5,
-                        fontweight="bold" if bold else "normal", color="#1a237e")
+                        fontweight="bold" if bold else "normal", color=ink,
+                        bbox=lbl_bbox)
     for y in range(y0, y1 + 1, GRID_M):
         bold = y % BOLD_M == 0
-        for x_edge, ha, dx in [(x0, "right", -4), (x1, "left", 4)]:
+        for x_edge, ha, dx in y_edges:
             ax.annotate(grid_label(y), (x_edge, y), xytext=(dx, 0),
                         textcoords="offset points", ha=ha, va="center",
                         fontsize=8 if bold else 4.5,
-                        fontweight="bold" if bold else "normal", color="#1a237e")
+                        fontweight="bold" if bold else "normal", color=ink,
+                        bbox=lbl_bbox)
+
+    # --- lat/lon graticule ---
+    if latlon:
+        draw_graticule(ax, bounds, y0, y1)
 
     # --- team priority squares ---
     if team:
@@ -129,10 +216,10 @@ def draw_map(bounds, out_stem, size, title, team=None, provider=None):
 
     # --- launch point ---
     dx, dy = TO_UTM.transform(EYC_DOCK[1], EYC_DOCK[0])
-    ax.plot(dx, dy, marker="*", color="#b71c1c", markersize=18,
+    ax.plot(dx, dy, marker="*", color=launch_color, markersize=18,
             markeredgecolor="white", zorder=5)
     ax.annotate("LAUNCH", (dx, dy), xytext=(8, 8), textcoords="offset points",
-                fontsize=9, fontweight="bold", color="#b71c1c",
+                fontsize=9, fontweight="bold", color=launch_color,
                 path_effects=None, zorder=5)
 
     # --- north arrow ---
@@ -155,18 +242,32 @@ def draw_map(bounds, out_stem, size, title, team=None, provider=None):
     # --- title + how-to-read + ham sidebar ---
     clat = (bounds["south"] + bounds["north"]) / 2
     clon = (bounds["west"] + bounds["east"]) / 2
-    ax.set_title(title, fontsize=15, fontweight="bold", pad=28)
-    fig.text(0.5, 0.955,
-             "Radio shows:  19TCG0136228411   →   split the 10 digits:  01362 | 28411   →   first 3 of each   →   square 013-284",
-             ha="center", fontsize=10, family="monospace")
-    fig.text(0.99, 0.01,
-             f"MGRS zone 19T, square CG · 100 m grid · "
-             f"Ham radio Maidenhead locator: {maidenhead(clat, clon)} "
-             f"(hams worldwide log contacts by grid square!)",
-             ha="right", fontsize=7, style="italic")
+    if not web:
+        ax.set_title(title, fontsize=15, fontweight="bold", pad=28)
+    if howto and not web:
+        fig.text(0.5, 0.955,
+                 "Radio shows:  19TCG0136228411   →   split the 10 digits:  01362 | 28411   →   first 3 of each   →   square 013-284",
+                 ha="center", fontsize=10, family="monospace")
+    if footer and not web:
+        fig.text(0.99, 0.01,
+                 f"MGRS zone 19T, square CG · 100 m grid · "
+                 f"Ham radio Maidenhead locator: {maidenhead(clat, clon)} "
+                 f"(hams worldwide log contacts by grid square!)",
+                 ha="right", fontsize=7, style="italic")
 
     ax.set_xticks([])
     ax.set_yticks([])
+    if web:
+        dpi = 200
+        fig.savefig(f"{out_stem}.png", dpi=dpi)
+        meta = {"epsg": 32619, "x0": x0, "x1": x1, "y0": y0, "y1": y1,
+                "width_px": int(round(fig_w * dpi)),
+                "height_px": int(round(fig_h * dpi)),
+                "utm_zone": "19T", "square_100km": "CG"}
+        Path(f"{out_stem}.json").write_text(json.dumps(meta, indent=2) + "\n")
+        plt.close(fig)
+        print(f"wrote {out_stem}.png / .json (web, extent-exact)")
+        return
     fig.tight_layout(rect=[0, 0.015, 1, 0.97])
     for ext in ("pdf", "png"):
         fig.savefig(f"{out_stem}.{ext}", dpi=200, bbox_inches="tight")
@@ -183,6 +284,29 @@ def main():
     p.add_argument("--size", choices=PAPER, default="letter")
     p.add_argument("--bounds", nargs=4, type=float, metavar=("S", "W", "N", "E"),
                    help="map bounds: south west north east (decimal degrees)")
+    p.add_argument("--bw", action="store_true",
+                   help="high-contrast black-and-white basemap and markings")
+    p.add_argument("--latlon", action="store_true",
+                   help="overlay dashed lat/lon graticule with degree labels")
+    p.add_argument("--no-howto", action="store_true",
+                   help="omit the 'Radio shows: ...' how-to-read line at the top")
+    p.add_argument("--no-footer", action="store_true",
+                   help="omit the 'MGRS zone 19T ...' line at the bottom")
+    p.add_argument("--name", help="output file stem (default: master-<size>)")
+    p.add_argument("--title", default="OCEAN RECON — Edgewood Mission Grid",
+                   help="map title")
+    p.add_argument("--provider", help="contextily tile provider, dotted path "
+                   "into ctx.providers (e.g. CartoDB.Positron)")
+    p.add_argument("--posterize", type=int, default=0, metavar="N",
+                   help="with --bw: flatten basemap to N gray levels")
+    p.add_argument("--invert-water", action="store_true",
+                   help="with --posterize: swap the two lightest levels so "
+                   "water prints white and land gray")
+    p.add_argument("--web", action="store_true",
+                   help="render edge-to-edge PNG + JSON extent sidecar for "
+                   "the live web map (no title/margins, labels inside)")
+    p.add_argument("--master-only", action="store_true",
+                   help="skip per-team maps")
     args = p.parse_args()
 
     bounds = DEFAULT_BOUNDS
@@ -193,16 +317,28 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
-    draw_map(bounds, out / f"master-{args.size}", args.size,
-             "OCEAN RECON — Edgewood Mission Grid")
+    provider = None
+    if args.provider:
+        provider = ctx.providers
+        for part in args.provider.split("."):
+            provider = provider[part]
+
+    stem = args.name or f"master-{args.size}"
+    draw_map(bounds, out / stem, args.size, args.title,
+             bw=args.bw, latlon=args.latlon, provider=provider,
+             howto=not args.no_howto, footer=not args.no_footer,
+             posterize=args.posterize, invert_water=args.invert_water,
+             web=args.web)
 
     teams_path = Path(args.teams)
-    if teams_path.exists():
+    if args.master_only:
+        pass
+    elif teams_path.exists():
         teams = json.loads(teams_path.read_text())["teams"]
         for team in teams:
             slug = team["name"].lower().replace(" ", "-")
             draw_map(bounds, out / f"{slug}-{args.size}", args.size,
-                     f"OCEAN RECON — Team {team['name']}", team=team)
+                     f"OCEAN RECON — Team {team['name']}", team=team, bw=args.bw)
     else:
         print(f"(no {teams_path} — master map only)")
 

@@ -177,8 +177,14 @@ async def run_live(mission, port):
 
     async def on_channel(event):
         p = event.payload or {}
-        mission.log_event("channel", p.get("channel_idx", "ch?"),
-                          p.get("text", ""), p)
+        # group messages arrive as "SENDER: text" — split off the sender name
+        text = p.get("text", "")
+        sender = f"ch{p.get('channel_idx', '?')}"
+        if ":" in text[:33]:
+            maybe_name, rest = text.split(":", 1)
+            if maybe_name.strip():
+                sender, text = maybe_name.strip(), rest.strip()
+        mission.log_event("channel", sender, text, p)
 
     async def on_direct(event):
         p = event.payload or {}

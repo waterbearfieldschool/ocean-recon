@@ -13,11 +13,12 @@ screen (stock MeshCore only shows decimal degrees). Kids read
 `19TCG0136228411`, split the 10 digits in half (`01362` | `28411`), take the
 first 3 of each, and find square `013-284` on their printed map.
 
-> Alternatives: `firmware/` holds a **minimal MGRS patch for stock MeshCore**
-> (a ~100-line diff that puts the full reference plus the `013-284` pair on
-> the stock GPS page) — see `firmware/README.md` for the trade-offs. And
-> stock **Meshtastic** firmware displays MGRS natively
-> (`display.gps_format MGRS`); `basestation/log_mesh.py` supports that path.
+> Alternatives: `firmware/` holds **mission firmware built from stock
+> MeshCore** — MGRS + grid pair on the GPS page, a pre-provisioned private
+> `edgewood` channel, a one-button RECON grid report on that channel, and
+> auto-advert on boot — see `firmware/README.md`. And stock **Meshtastic**
+> firmware displays MGRS natively (`display.gps_format MGRS`);
+> `basestation/log_mesh.py` supports that path.
 
 ## Rationale
 
@@ -90,8 +91,9 @@ for almost two centuries.
 - `basestation/log_mesh.py` — same idea for the Meshtastic firmware path
 - `basestation/nodes.json` — radio name → team
 - `docs/radio-setup.md` — night-before flashing + configuration checklist
-- `firmware/` — alternative: minimal patch adding MGRS display to stock
-  MeshCore (`MGRS.h` + `mgrs-display.patch` + build instructions)
+- `firmware/` — mission firmware from stock MeshCore: MGRS display, private
+  `edgewood` channel, one-button grid reports, boot advert
+  (`MGRS.h` + `ocean-recon-mission.patch` + prebuilt `.bin`)
 - `docs/mission-plan.md` — lesson outline, briefing script, rules, data sheet
 - `index.html` — shareable project explainer (web + print in one file)
 - `docs/ocean-recon-explainer.pdf` — the same explainer, rendered for printing
