@@ -137,22 +137,28 @@ squares</i> to cover. Sail into a square, hold position, record the reading
 water, boat to boat, back to mission control on shore.</p>
 
 <h2>How a crew knows where it is</h2>
-<p>The radio&rsquo;s screen shows position in the US National Grid (the
-search-and-rescue standard). The whole sailing area sits inside one zone
-(<code>19TCG</code> &mdash; ignore it), so crews split the ten digits that follow
-in half and take <b>the first three digits of each half</b>:</p>
+<p>The radio&rsquo;s GPS page shows position in the US National Grid (the
+search-and-rescue standard) &mdash; and our firmware build adds a
+<code>grid</code> line that has already done the digit work:</p>
 
 <div class="readme">
   <div class="display">
-    <span class="dim">POSITION&nbsp;&nbsp;·&nbsp;&nbsp;SATS 9</span>
-    19TCG <span class="hot">013</span>62&thinsp;·&thinsp;<span class="hot">284</span>11
+    <span class="dim">RADIO SCREEN&nbsp;&nbsp;·&nbsp;&nbsp;GPS PAGE</span>
+    gps on&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fix<br>
+    sat&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;9<br>
+    mgrs 19TCG<span class="hot">013</span>62<span class="hot">284</span>11<br>
+    grid&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="hot">013-284</span>
   </div>
   <div class="arrow">&#8594;</div>
   <div class="square-callout">you are in square<br><b>013 &ndash; 284</b></div>
 </div>
 
-<p>Find column <b>013</b> and row <b>284</b> on the printed map &mdash; that&rsquo;s
-your boat. </p>
+<p>The <code>grid</code> line is the map answer: find column <b>013</b> and row
+<b>284</b> on the printed chart &mdash; that&rsquo;s your boat. The
+<code>mgrs</code> line above it is the full professional reference, and it
+hides the same numbers: the whole sailing area sits inside one zone
+(<code>19TCG</code>), so split the ten digits that follow in half and take the
+first three of each &mdash; crews can check the radio&rsquo;s math themselves.</p>
 
 <h2>How the data gets home</h2>
 <div class="flow">
@@ -160,7 +166,7 @@ your boat. </p>
   <div class="arr">&#8594;</div>
   <div class="node"><b>Radio + GPS</b>one button press tags it with position</div>
   <div class="arr">&#8594;</div>
-  <div class="node"><b>Mesh network</b>boats relay each other &mdash; no cell towers</div>
+  <div class="node"><b>Mesh network</b>LoRa hops via repeaters &mdash; no cell towers</div>
   <div class="arr">&#8594;</div>
   <div class="node"><b>Mission control</b>shore laptop logs &amp; scores</div>
   <div class="arr">&#8594;</div>
