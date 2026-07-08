@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Ocean Recon mission control: log mesh traffic and track grid coverage.
+"""Ocean Recon mission control — Meshtastic edition (alternative firmware path;
+the mission currently runs MeshCore — see log_meshcore.py).
 
 Connects to a Heltec over USB serial via the meshtastic library, logs every
 position and telemetry packet to CSV, and rewrites a live coverage map

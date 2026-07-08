@@ -6,7 +6,8 @@ squares highlighted) as PDF and PNG, sized for letter or ledger paper.
 
 Grid squares are named by the first three digits of the MGRS easting and
 northing groups, e.g. "013-284" — the same digits the kids read off a
-Meshtastic display set to `display.gps_format MGRS`.
+MeshCore display with Settings -> Pos. Format set to MGRS (shown
+concatenated, e.g. 19TCG0136228411).
 
 Usage:
     python make_map.py                      # master + all teams from teams.json
@@ -156,7 +157,7 @@ def draw_map(bounds, out_stem, size, title, team=None, provider=None):
     clon = (bounds["west"] + bounds["east"]) / 2
     ax.set_title(title, fontsize=15, fontweight="bold", pad=28)
     fig.text(0.5, 0.955,
-             "Radio shows:  19T CG 01362 28411   →   read first 3 digits of each group  →   square 013-284",
+             "Radio shows:  19TCG0136228411   →   split the 10 digits:  01362 | 28411   →   first 3 of each   →   square 013-284",
              ha="center", fontsize=10, family="monospace")
     fig.text(0.99, 0.01,
              f"MGRS zone 19T, square CG · 100 m grid · "

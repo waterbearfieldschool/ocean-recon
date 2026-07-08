@@ -5,3 +5,4 @@ mgrs
 folium
 meshtastic
 weasyprint
+meshcore

@@ -1,87 +1,98 @@
-# Radio + sensor setup checklist (do this the night before)
+# Radio setup checklist — MeshCore on Heltec V4 (do this the night before)
 
-One Heltec V4 + GPS module + one I2C sensor per team, plus one radio for the
-base station laptop. All commands use the Meshtastic CLI from this repo's venv:
+The radios run the **dt267 low-power MeshCore fork**, which adds the one
+feature this mission depends on: on-screen coordinates in **MGRS** format
+(stock MeshCore only shows decimal degrees, and only this fork has the
+Pos. Format setting).
 
-```bash
-alias mt='.venv/bin/meshtastic'
-```
+Firmware: <https://github.com/dt267/MeshCore-Low-Power-Firmware-For-Heltec-V3-V4>
 
-Plug in one radio at a time (the CLI auto-detects the serial port).
+## 1. Flash each radio
 
-## 1. Per-radio basics
-
-```bash
-mt --set lora.region US
-mt --set-owner-short SEAL        # unique 4-char name per radio: SEAL, OSPR, BASS, BASE...
-```
-
-The short name is how the radio appears in the base station log — make it match
-`basestation/nodes.json` (or edit that file to match your names).
-
-## 2. Shared private channel (keeps camp traffic off the public mesh)
-
-On the FIRST radio:
+Download the latest **Heltec V4 companion** `_merged.bin` from the repo's
+Releases page, then flash it at address `0x0` (full install):
 
 ```bash
-mt --ch-set name OceanRecon --ch-set psk random --ch-index 0
-mt --info          # copy the "Complete URL" it prints
+.venv/bin/pip install esptool          # once
+python -m esptool --chip esp32s3 write_flash 0x0 Heltec_v4_companion_radio_*_merged.bin
 ```
 
-On EVERY OTHER radio:
+The companion build is unified — BLE, USB serial, and WiFi in one image, and
+it auto-detects the OLED. For later firmware updates, flash the plain `.bin`
+at `0x10000` instead (settings survive).
 
-```bash
-mt --seturl 'https://meshtastic.org/e/#...'   # the URL from above
+## 2. On-device settings (via the screen's Settings page)
+
+Navigate with the user button (short press = next, long press = select):
+
+- **Pos. Format → MGRS** ← the whole mission. The GPS page, GPS Trace, and
+  Quick Send status bar now show e.g. `19TCG0136228411`.
+- **GPS Privacy → off** — so Quick Send messages carry coordinates to shore.
+- **Connection Mode**: leave BLE on the kids' radios; set **USB** on the base
+  station radio so the laptop can talk to it over serial.
+
+## 3. CLI settings (TerminalCLI over USB, or via the MeshCore app)
+
+```
+set gps.interval 10        # fix every 10 s (default; 0 = always on)
+set gps.mode 4             # GPS + BeiDou + GLONASS (default, most robust fix)
+set quick.0 Reading taken  # Quick Send preset the kids will use
+set quick.1 Priority square done
+set quick.2 Returning to dock
 ```
 
-## 3. GPS + MGRS display
+Give each radio a recognizable name in the MeshCore app (SEAL, OSPR, BASS,
+BASE...) and make it match `basestation/nodes.json`.
 
-```bash
-mt --set position.gps_mode ENABLED
-mt --set display.gps_format MGRS
-mt --set position.position_broadcast_secs 60
-mt --set position.position_broadcast_smart_enabled true
-```
+Quick Send always transmits on the **Public channel**, which is what the base
+station listens to — no channel setup needed for the mission itself.
 
-- The Heltec GPS module goes on its dedicated connector. If `--info` /the
-  screen never shows satellites, the UART pins need setting explicitly
-  (`gps.rx_pin` / `gps.tx_pin` for your module wiring) — but the standard
-  Heltec module should be plug-and-play.
-- **Take each radio outside and confirm a GPS lock** (satellite count on the
-  GPS screen) before calling it done. First lock can take a few minutes.
-- Once locked, the position screen shows e.g. `19T CG 01362 28411` — that's
-  the MGRS readout the kids use.
+## 4. How a crew reads its square
 
-## 4. Environment sensor (one I2C sensor per radio)
+The screen shows: `19TCG0136228411`
 
-Wire the sensor to the I2C pins (SDA/SCL + 3.3 V/GND). Meshtastic auto-detects
-common sensors at boot: BME280/BMP280, SHT31/40/41, AHT10/20, INA219/260, etc.
+- `19TCG` — the zone; same for the whole sailing area, ignore it.
+- The 10 digits split in half: `01362` | `28411`.
+- First 3 of each half: **013** and **284** → **square 013-284** on the map.
 
-```bash
-mt --set telemetry.environment_measurement_enabled true
-mt --set telemetry.environment_screen_enabled true
-mt --set telemetry.environment_update_interval 60
-```
+(Every printed map repeats this recipe in its top margin.)
 
-Reboot the radio (power cycle) after wiring so the I2C scan runs. The display
-carousel should now include an environment screen with the live reading, and
-readings broadcast over the mesh every ~60 s.
+## 5. Field procedure (this replaces automatic telemetry)
 
-## 5. Base station
+MeshCore doesn't broadcast positions continuously the way Meshtastic does —
+positions travel with messages. So the drill in each square is:
 
-- One configured radio stays ashore, plugged into the laptop via USB.
-- Run: `.venv/bin/python basestation/log_mesh.py`
-- Open `basestation/coverage.html` in a browser; refresh to see coverage fill in.
-- `Ctrl-C` at mission end prints per-team scores.
-- Dry-run without hardware anytime: `... log_mesh.py --test`
+1. Read your square off the GPS page.
+2. Take the measurement, write square + time + value on the data sheet.
+3. **Quick Send → "Reading taken"** — the message (with coordinates attached)
+   hops through the mesh to shore, and the square lights up at mission control.
 
-## 6. Field prep
+## 6. Sensors — deferred (collect by hand for now)
 
-- [ ] Every radio: GPS lock verified outdoors, MGRS shows on screen
-- [ ] Every radio: sensor screen shows a plausible reading
-- [ ] Send a test message between radios on the OceanRecon channel
-- [ ] Base station logs a position from each radio (check the CSV)
+Readings are taken with handheld instruments and recorded on paper this time.
+When we're ready: this fork supports environment sensors on the Heltec V4's
+QuickLink I2C port (BME280-family auto-detected at 0x76/0x77), so the same
+boards can grow into sensor nodes later.
+
+## 7. Base station
+
+- The USB-mode radio stays ashore, plugged into the laptop.
+- Run: `.venv/bin/python basestation/log_meshcore.py --port /dev/ttyUSB0`
+- Open `basestation/coverage.html` in a browser; refresh to watch squares fill.
+- `Ctrl-C` prints per-team scores.
+- **IMPORTANT: test with real radios before mission day** — the logger is
+  written against meshcore_py's documented API but hasn't touched hardware
+  yet. Send a Quick Send from a second radio and confirm a CSV row appears
+  with a square. (The raw payload is logged in the last column, so even if
+  coordinate parsing needs a tweak, no data is lost.)
+- Dry-run without hardware anytime: `... log_meshcore.py --test`
+
+## 8. Field prep
+
+- [ ] Every radio: GPS lock verified outdoors, MGRS string on the GPS page
+- [ ] Every radio: GPS Privacy off; Quick Send test heard by base station
+- [ ] Base station: CSV row with correct square from each radio
 - [ ] Ziplock / dry bag + lanyard per radio (screen readable through the bag)
 - [ ] USB power bank + cable per boat
-- [ ] Screen timeout long enough to read (`mt --set display.screen_on_secs 300`)
-- [ ] Printed team maps (`maps/*.pdf`) + pencils + data sheets
+- [ ] Printed team maps (`maps/*.pdf`) + pencils + data sheets + handheld
+      thermometers (or whichever instruments each team carries)

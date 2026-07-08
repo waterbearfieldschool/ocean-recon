@@ -1,18 +1,27 @@
 # Ocean Recon
 
 Sailing-camp STEM mission at Edgewood (Providence River, Cranston RI): kids on
-sailboats carry Heltec V4 Meshtastic radios with GPS and environmental sensors,
-collect readings across MGRS 100 m grid squares, and the mesh relays everything
-to a shore-side mission control laptop.
+sailboats carry Heltec V4 MeshCore radios with GPS, collect readings across
+MGRS 100 m grid squares (by hand for now — onboard sensors later), and Quick
+Send messages carry each position over the mesh to a shore-side mission
+control laptop.
 
-The radios' displays are set to MGRS (`display.gps_format MGRS`), so the whole
-activity runs on stock Meshtastic firmware — kids read `19T CG 01362 28411` off
-the screen, take the first 3 digits of each number group, and find square
-`013-284` on their printed map.
+The radios run the [dt267 low-power MeshCore
+fork](https://github.com/dt267/MeshCore-Low-Power-Firmware-For-Heltec-V3-V4),
+whose **Pos. Format → MGRS** setting puts the grid reference right on the
+screen (stock MeshCore only shows decimal degrees). Kids read
+`19TCG0136228411`, split the 10 digits in half (`01362` | `28411`), take the
+first 3 of each, and find square `013-284` on their printed map.
+
+> Alternatives: `firmware/` holds a **minimal MGRS patch for stock MeshCore**
+> (a ~100-line diff that puts the full reference plus the `013-284` pair on
+> the stock GPS page) — see `firmware/README.md` for the trade-offs. And
+> stock **Meshtastic** firmware displays MGRS natively
+> (`display.gps_format MGRS`); `basestation/log_mesh.py` supports that path.
 
 ## Rationale
 
-The original design brief, in brief: we have Meshtastic radios with displays,
+The original design brief, in brief: we have mesh radios with displays,
 GPS, and room for a sensor on each board. Give every crew one radio and one
 instrument, divide the waters around Edgewood into grid squares, and hand each
 team a printed map with priority squares to cover. The radio's screen tells a
@@ -75,14 +84,18 @@ for almost two centuries.
 - `gridmap/make_map.py` — printable grid maps (PDF/PNG, letter or ledger); one
   master map plus one per team with priority squares highlighted
 - `gridmap/teams.json` — teams, colors, priority squares
-- `basestation/log_mesh.py` — mission control: logs mesh position/telemetry to
-  CSV, live coverage map (`coverage.html`), per-team scoring on Ctrl-C
-- `basestation/nodes.json` — radio short name → team
-- `docs/radio-setup.md` — night-before radio/sensor configuration checklist
+- `basestation/log_meshcore.py` — mission control (MeshCore): logs messages and
+  their attached positions to CSV, live coverage map (`coverage.html`),
+  per-team scoring on Ctrl-C
+- `basestation/log_mesh.py` — same idea for the Meshtastic firmware path
+- `basestation/nodes.json` — radio name → team
+- `docs/radio-setup.md` — night-before flashing + configuration checklist
+- `firmware/` — alternative: minimal patch adding MGRS display to stock
+  MeshCore (`MGRS.h` + `mgrs-display.patch` + build instructions)
 - `docs/mission-plan.md` — lesson outline, briefing script, rules, data sheet
 - `index.html` — shareable project explainer (web + print in one file)
 - `docs/ocean-recon-explainer.pdf` — the same explainer, rendered for printing
-- `maps/` — generated output (not committed)
+- `maps/` — the printable grid maps (regenerate with `gridmap/make_map.py`)
 
 ## Sharing the explainer
 
@@ -105,6 +118,6 @@ python3 -m venv .venv
 # generate maps (needs internet for basemap tiles)
 .venv/bin/python gridmap/make_map.py --size ledger
 
-# mission control (Heltec on USB), or --test for a dry run
-.venv/bin/python basestation/log_mesh.py
+# mission control (MeshCore radio on USB), or --test for a dry run
+.venv/bin/python basestation/log_meshcore.py --port /dev/ttyUSB0
 ```

@@ -1,9 +1,10 @@
 # Ocean Recon — mission plan (sailing camp STEM lesson)
 
 **The mission:** Edgewood's waters need an environmental survey. Each boat is a
-recon vessel carrying a mesh radio with GPS and a science sensor. Sail to your
-team's priority grid squares, hold position, record the reading, and the mesh
-network relays your data back to mission control on shore.
+recon vessel carrying a MeshCore mesh radio with GPS, plus a handheld
+instrument. Sail to your team's priority grid squares, hold position, record
+the reading — then press Quick Send, and the mesh network carries your
+position back to mission control on shore.
 
 ## Timeline (~90 min)
 
@@ -22,10 +23,10 @@ network relays your data back to mission control on shore.
 - **Grid squares**: so navigators chop the world into named squares. Ours is
   **MGRS** — the grid used by the military, the Coast Guard, and search-and-rescue
   teams, printed on your map as 100 m squares.
-- **Reading the radio**: the screen shows `19T CG 01362 28411`. Everything here
-  is inside zone `19T CG`, so you only need the **first 3 digits of each number
-  group**: square **013-284**. Find column 013 and row 284 on your map — that's
-  where you are.
+- **Reading the radio**: the screen shows `19TCG0136228411`. Everything here is
+  inside zone `19TCG`, so ignore that part; split the 10 remaining digits in
+  half — `01362` | `28411` — and take the **first 3 of each half**: square
+  **013-284**. Find column 013 and row 284 on your map — that's where you are.
 - **Ham radio connection**: amateur radio operators do the same thing with the
   *Maidenhead* grid — we're in square **FN41hs** — and log contacts around the
   world by grid square.
@@ -37,10 +38,11 @@ network relays your data back to mission control on shore.
 
 1. Each team has **5 priority squares** (shaded on your map) worth **3 points**;
    any other new square your team logs is worth **1 point**.
-2. A square counts when you're **inside it on the radio screen** and you've
-   **written the reading on your data sheet** (square, time, value).
-3. The shore station is logging everything automatically — your paper sheet is
-   checked against it at debrief, like real scientists validating data.
+2. A square counts when you're **inside it on the radio screen**, you've
+   **written the reading on your data sheet** (square, time, value), and you've
+   pressed **Quick Send → "Reading taken"** so shore hears it.
+3. The shore station logs every Quick Send with its position — your paper sheet
+   is checked against it at debrief, like real scientists validating data.
 4. Stay west of the channel markers. Safety boat's word is final.
 
 ## Data sheet (print a few per team)
