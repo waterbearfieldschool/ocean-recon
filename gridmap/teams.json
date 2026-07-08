@@ -1,0 +1,23 @@
+{
+  "_comment": "Priority squares use the 3-digit MGRS easting/northing the kids read off the radio display (e.g. '017-284'). All defaults below are open water, west of the shipping channel, within sailing range of the Edgewood YC launch (square 013-284). Edit freely.",
+  "teams": [
+    {
+      "name": "Harbor Seals",
+      "color": "#e53935",
+      "sector": "northeast of launch, toward Fields Point reach",
+      "priority_squares": ["017-284", "019-283", "021-284", "018-281", "020-280"]
+    },
+    {
+      "name": "Ospreys",
+      "color": "#8e24aa",
+      "sector": "east-southeast of launch, mid-basin",
+      "priority_squares": ["016-278", "019-279", "018-277", "020-276", "017-275"]
+    },
+    {
+      "name": "Striped Bass",
+      "color": "#f57f17",
+      "sector": "south of launch, toward Stillhouse Cove",
+      "priority_squares": ["016-272", "019-273", "018-270", "017-267", "020-268"]
+    }
+  ]
+}

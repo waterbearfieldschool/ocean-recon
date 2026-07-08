@@ -1,0 +1,6 @@
+{
+  "_comment": "Map each radio to a team. Keys are the radio's 4-char short name (set it with: meshtastic --set-owner-short SEAL) or the node id like !a1b2c3d4. Edit to match your radios.",
+  "SEAL": "Harbor Seals",
+  "OSPR": "Ospreys",
+  "BASS": "Striped Bass"
+}
