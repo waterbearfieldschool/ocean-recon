@@ -23,6 +23,8 @@ const HISTORY_MAX = 20000;          // per-node fix cap (memory guard)
 const PALETTE = ["#e53935", "#1e88e5", "#43a047", "#fb8c00", "#8e24aa",
                  "#00acc1", "#f06292", "#6d4c41", "#c0ca33", "#5c6bc0"];
 
+const IS_TOUCH = window.matchMedia("(pointer: coarse)").matches;
+
 const UTM19 = "+proj=utm +zone=19 +datum=WGS84 +units=m +no_defs";
 const llToUtm = (lat, lon) => proj4("WGS84", UTM19, [lon, lat]);
 
@@ -174,7 +176,7 @@ function drawNode(st) {
   const pos = utmToMap(l.x, l.y);
   if (!st.marker) {
     st.marker = L.circleMarker(pos, {
-      radius: 9, color: "#111", weight: 2,
+      radius: IS_TOUCH ? 12 : 9, color: "#111", weight: 2,
       fillColor: st.color, fillOpacity: 0.95,
     }).addTo(map).bindPopup(() => popupHtml(st));
     const icon = LABEL_STYLE === "ondot"
@@ -354,6 +356,7 @@ async function tick(fn) {
   if (dynamicGridLabels) setupGridLabels();
 
   const readout = document.getElementById("readout");
+  readout.textContent = IS_TOUCH ? "tap map for USNG" : "click map for USNG";
   const showUtm = (latlng) => {
     const [x, y] = mapToUtm(latlng);
     readout.textContent = onMap(x, y)
