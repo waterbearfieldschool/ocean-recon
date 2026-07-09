@@ -118,7 +118,7 @@ def draw_graticule(ax, bounds, y0, y1, step=0.005):
 
 def draw_map(bounds, out_stem, size, title, team=None, provider=None, bw=False,
              latlon=False, howto=True, footer=True, posterize=0,
-             invert_water=False, web=False, edge_labels=True):
+             invert_water=False, web=False, edge_labels=True, launch=True):
     x0, x1, y0, y1 = snap_bounds(bounds)
     if web:
         # edge-to-edge render: image pixels map linearly onto the UTM extent
@@ -217,12 +217,13 @@ def draw_map(bounds, out_stem, size, title, team=None, provider=None, bw=False,
         ax.legend(loc="lower right", fontsize=9, framealpha=0.9)
 
     # --- launch point ---
-    dx, dy = TO_UTM.transform(EYC_DOCK[1], EYC_DOCK[0])
-    ax.plot(dx, dy, marker="*", color=launch_color, markersize=18,
-            markeredgecolor="white", zorder=5)
-    ax.annotate("LAUNCH", (dx, dy), xytext=(8, 8), textcoords="offset points",
-                fontsize=9, fontweight="bold", color=launch_color,
-                path_effects=None, zorder=5)
+    if launch:
+        dx, dy = TO_UTM.transform(EYC_DOCK[1], EYC_DOCK[0])
+        ax.plot(dx, dy, marker="*", color=launch_color, markersize=18,
+                markeredgecolor="white", zorder=5)
+        ax.annotate("LAUNCH", (dx, dy), xytext=(8, 8),
+                    textcoords="offset points", fontsize=9, fontweight="bold",
+                    color=launch_color, path_effects=None, zorder=5)
 
     # --- north arrow ---
     ax_len = (y1 - y0) * 0.06
@@ -310,6 +311,8 @@ def main():
     p.add_argument("--no-edge-labels", action="store_true",
                    help="omit the 3-digit grid labels along the map edges "
                    "(for web maps that draw labels dynamically)")
+    p.add_argument("--no-launch", action="store_true",
+                   help="omit the LAUNCH star/label at the EYC dock")
     p.add_argument("--master-only", action="store_true",
                    help="skip per-team maps")
     args = p.parse_args()
@@ -333,7 +336,8 @@ def main():
              bw=args.bw, latlon=args.latlon, provider=provider,
              howto=not args.no_howto, footer=not args.no_footer,
              posterize=args.posterize, invert_water=args.invert_water,
-             web=args.web, edge_labels=not args.no_edge_labels)
+             web=args.web, edge_labels=not args.no_edge_labels,
+             launch=not args.no_launch)
 
     teams_path = Path(args.teams)
     if args.master_only:

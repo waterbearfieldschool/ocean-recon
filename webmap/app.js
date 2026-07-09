@@ -200,15 +200,13 @@ function drawGoals() {
     const [e3, n3] = g.square.split("-").map(Number);
     const x = Math.floor(META.x0 / 100000) * 100000 + e3 * 100;  // SW corner
     const y = Math.floor(META.y0 / 100000) * 100000 + n3 * 100;
-    const label = `Node ${g.node} goal — square <b>${g.square}</b>`;
-    L.rectangle([utmToMap(x, y), utmToMap(x + 100, y + 100)], {
-      color, weight: 2.5, dashArray: "6 4", fill: true, fillOpacity: 0.08,
-    }).addTo(map).bindPopup(label);
-    L.marker(utmToMap(x + 50, y + 50), {
-      interactive: false, keyboard: false,
-      icon: L.divIcon({ className: "", iconSize: null, html:
-        `<div class="goal-star" style="color:${color}">★</div>` }),
-    }).addTo(map);
+    // star sits on the grid intersection the square is named after (SW corner)
+    L.marker(utmToMap(x, y), {
+      keyboard: false,
+      icon: L.divIcon({ className: "goal-icon", iconSize: [26, 26],
+        iconAnchor: [13, 13], html:
+        `<div class="goal-star" style="color:${color}">★<span class="goal-id">${g.node}</span></div>` }),
+    }).addTo(map).bindPopup(`Node ${g.node} goal — <b>${g.square}</b>`);
   }
 }
 
