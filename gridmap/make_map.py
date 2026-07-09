@@ -118,7 +118,7 @@ def draw_graticule(ax, bounds, y0, y1, step=0.005):
 
 def draw_map(bounds, out_stem, size, title, team=None, provider=None, bw=False,
              latlon=False, howto=True, footer=True, posterize=0,
-             invert_water=False, web=False):
+             invert_water=False, web=False, edge_labels=True):
     x0, x1, y0, y1 = snap_bounds(bounds)
     if web:
         # edge-to-edge render: image pixels map linearly onto the UTM extent
@@ -182,6 +182,8 @@ def draw_map(bounds, out_stem, size, title, team=None, provider=None, bw=False,
         else [(y0, "top", -12), (y1, "bottom", 12)]
     y_edges = [(x0, "left", 4), (x1, "right", -4)] if web \
         else [(x0, "right", -4), (x1, "left", 4)]
+    if not edge_labels:
+        x_edges = y_edges = []
     for x in range(x0, x1 + 1, GRID_M):
         bold = x % BOLD_M == 0
         for y_edge, va, dy in x_edges:
@@ -305,6 +307,9 @@ def main():
     p.add_argument("--web", action="store_true",
                    help="render edge-to-edge PNG + JSON extent sidecar for "
                    "the live web map (no title/margins, labels inside)")
+    p.add_argument("--no-edge-labels", action="store_true",
+                   help="omit the 3-digit grid labels along the map edges "
+                   "(for web maps that draw labels dynamically)")
     p.add_argument("--master-only", action="store_true",
                    help="skip per-team maps")
     args = p.parse_args()
@@ -328,7 +333,7 @@ def main():
              bw=args.bw, latlon=args.latlon, provider=provider,
              howto=not args.no_howto, footer=not args.no_footer,
              posterize=args.posterize, invert_water=args.invert_water,
-             web=args.web)
+             web=args.web, edge_labels=not args.no_edge_labels)
 
     teams_path = Path(args.teams)
     if args.master_only:

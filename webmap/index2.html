@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ocean Recon — Mission Replay</title>
+<title>Ocean Recon — Mission Replay (labels on dots)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -22,7 +22,7 @@
 </div>
 <div id="readout">click map for USNG</div>
 <script>window.APP_CONFIG = { base: "usng-base-plain", dynamicGridLabels: true,
-                              data: "data.json",
+                              data: "data.json", labelStyle: "ondot",
                               goals: [{ node: 3, square: "025-270" }] };</script>
 <script src="app.js"></script>
 </body>
